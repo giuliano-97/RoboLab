@@ -9,6 +9,8 @@ authors = [{name = "Xuning Yang"}]
 dependencies = [
     # Core
     "isaaclab==2.2.0",
+    "isaacsim[all,extscache]==5.0.0",
+    "warp-lang~=1.12",
     "torch",
     "numpy",
     "gymnasium",
@@ -52,13 +54,13 @@ index-strategy = "unsafe-best-match"
 no-build-isolation-package = ["flatdict"]
 
 [[tool.uv.index]]
+name = "nvidia"
+url = "https://pypi.nvidia.com"
+
+[[tool.uv.index]]
 name = "pytorch-cu128"
 url = "https://download.pytorch.org/whl/cu128"
 explicit = true
-
-[[tool.uv.index]]
-name = "nvidia"
-url = "https://pypi.nvidia.com"
 
 [tool.uv.sources]
 torch = { index = "pytorch-cu128" }
