@@ -10,6 +10,7 @@ module owns the registry lookup and kwarg-filtering.
 """
 
 import inspect
+import logging
 from typing import Any
 
 from robolab.eval.base_client import InferenceClient
@@ -22,25 +23,29 @@ from robolab.eval.base_client import InferenceClient
 # under multiple keys.
 POLICY_REGISTRY: dict[str, type[InferenceClient]] = {}
 
+LOGGER = logging.getLogger(__name__)
+
 try:
     from .pi0_family import Pi0DroidJointposClient
     for _name in ("pi0", "pi0_fast", "pi05", "paligemma", "paligemma_fast"):
         POLICY_REGISTRY[_name] = Pi0DroidJointposClient
+    LOGGER.info("pi0_family policies registered")
 except ImportError:
-    pass
+    LOGGER.warning("pi0_family policies not registered")
 
 try:
     from .gr00t import GR00TDroidJointposClient
     POLICY_REGISTRY["gr00t"] = GR00TDroidJointposClient
+    LOGGER.info("gr00t policies registered")
 except ImportError:
-    pass
+    LOGGER.warning("gr00t policies not registered")
 
 try:
     from .dreamzero import DreamZeroClient
     POLICY_REGISTRY["dreamzero"] = DreamZeroClient
+    LOGGER.info("dreamzero policies registered")
 except ImportError:
-    pass
-
+    LOGGER.warning("dreamzero policies not registered")
 
 def create_client(name: str, **kwargs: Any) -> InferenceClient:
     """Construct the inference client for a given backend name.
