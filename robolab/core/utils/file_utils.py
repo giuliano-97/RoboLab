@@ -490,6 +490,10 @@ def expand_folder_patterns(
     for pattern in patterns:
         if os.path.isabs(pattern):
             full_pattern = pattern
+        elif glob.glob(pattern):
+            # Respect explicit relative paths (e.g. "output/run_123") before
+            # falling back to a default base directory such as DEFAULT_OUTPUT_DIR.
+            full_pattern = pattern
         elif base_dir is not None:
             full_pattern = os.path.join(base_dir, pattern)
         else:
