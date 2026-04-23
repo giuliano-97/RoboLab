@@ -74,8 +74,9 @@ import robolab.constants # noqa
 
 # Fix recorder manager
 patch_recorder_manager()
-# Run automatic factory generation before main
-auto_register_droid_envs()
+# Register only the requested task(s) when provided so custom task files outside the
+# default benchmark folder can still be resolved by the environment factory.
+auto_register_droid_envs(task=args_cli.task)
 
 robolab.constants.VERBOSE = True
 robolab.constants.DEBUG = False
@@ -119,7 +120,7 @@ def main():
                 num_steps=args_cli.num_steps,
                 episode=i,
                 save_image=False,
-                save_videos=False)
+                save_videos=args_cli.save_videos)
 
             end_episode(env)
 
