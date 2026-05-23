@@ -8,7 +8,7 @@ from isaaclab.managers import TerminationTermCfg as DoneTerm
 from isaaclab.utils import configclass
 
 from robolab.core.scenes.utils import import_scene
-from robolab.core.task.conditionals import object_in_container, pick_and_place, wrong_object_grabbed
+from robolab.core.task.conditionals import objects_placed_in_container_in_order, pick_and_place
 from robolab.core.task.task import Task
 
 
@@ -17,7 +17,16 @@ class Terminations:
     """Termination configuration for banana task."""
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
 
-    success = DoneTerm(func=object_in_container, params={"object": ["rubiks_cube", "banana"], "container": "bowl", "logical": "all", "tolerance": 0.0, "require_contact_with": True, "require_gripper_detached": True})
+    success = DoneTerm(
+        func=objects_placed_in_container_in_order,
+        params={
+            "objects": ["banana", "rubiks_cube"],
+            "container": "bowl",
+            "tolerance": 0.0,
+            "require_contact_with": True,
+            "require_gripper_detached": True,
+        },
+    )
 
 @dataclass
 class BananaThenRubiksCubeTask(Task):

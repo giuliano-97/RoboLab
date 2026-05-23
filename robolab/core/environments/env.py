@@ -16,6 +16,7 @@ import torch
 from isaaclab.envs import ManagerBasedRLEnv
 
 from robolab.core.logging.recorder_manager import RobolabRecorderManager
+from robolab.core.world.world_state import get_world
 
 logger = logging.getLogger(__name__)
 
@@ -84,6 +85,7 @@ class RobolabEnv(ManagerBasedRLEnv):
         if not self._has_stepped:
             # Initial reset — let all envs reset normally
             super()._reset_idx(env_ids)
+            get_world(self).reset_predicate_state(env_ids)
             return
 
         # During stepping — freeze newly terminated envs
@@ -93,7 +95,9 @@ class RobolabEnv(ManagerBasedRLEnv):
                 if ep_len <= 2:
                     # Physics artifact: terminated before the robot could act.
                     # Reset this env normally so it gets a clean start.
-                    super()._reset_idx(torch.tensor([eid], device=self.device, dtype=env_ids.dtype))
+                    artifact_ids = torch.tensor([eid], device=self.device, dtype=env_ids.dtype)
+                    super()._reset_idx(artifact_ids)
+                    get_world(self).reset_predicate_state(artifact_ids)
                     continue
                 self._frozen_envs[eid] = True
                 self._env_results[eid] = bool(self.termination_manager.terminated[eid])
@@ -113,6 +117,7 @@ class RobolabEnv(ManagerBasedRLEnv):
         active_ids = env_ids[mask]
         if len(active_ids) > 0:
             super()._reset_idx(active_ids)
+            get_world(self).reset_predicate_state(active_ids)
 
     @property
     def all_terminated(self) -> bool:

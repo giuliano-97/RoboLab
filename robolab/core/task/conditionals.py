@@ -1099,3 +1099,111 @@ def stacked(
     if robolab.constants.DEBUG:
         print(f"stacked: {objects} stacked (order={order}, tol={tolerance}) -> {result}")
     return result
+
+
+@atomic
+def objects_placed_in_container_in_order(
+    env,
+    objects: list[str],
+    container: str,
+    tolerance: float = 0.01,
+    require_contact_with: Union[bool, str, list[str]] = True,
+    require_gripper_detached: bool = True,
+    gripper_name: str = "gripper",
+    strict: bool = False,
+    key: str | None = None,
+    env_id: int | None = None,
+):
+    """Stateful: checks that ``objects`` ended up in ``container`` in the listed order.
+
+    Latches each object's first-observed placement step per env (using
+    ``env.episode_length_buf``). Returns True for an env only when:
+      1. Every object currently satisfies the same per-object placement check
+         used by ``object_in_container`` (containment + optional contact +
+         optional gripper-detached), AND
+      2. The latched first-placement steps are monotonic in the given order
+         (``<=`` by default; ``<`` if ``strict=True``).
+
+    Latches survive object ejection (first-ever placement is sticky), so a policy
+    that places the wrong object first cannot recover by knocking it out and
+    re-placing later. Per-env latches are cleared on episode reset by
+    ``RobolabEnv._reset_idx`` via ``WorldState.reset_predicate_state``.
+    """
+    world = get_world(env)
+    objects = list(objects)
+    state_key = key or f"placed_in_order::{container}::{','.join(objects)}"
+
+    def _make_state():
+        N, dev = env.num_envs, env.device
+        first = {obj: torch.full((N,), -1, dtype=torch.long, device=dev) for obj in objects}
+
+        def reset(env_ids: torch.Tensor) -> None:
+            for t in first.values():
+                t[env_ids] = -1
+
+        return {"first_placed_step": first, "__reset__": reset}
+
+    state = world.get_or_init_predicate_state(state_key, _make_state)
+    first_placed = state["first_placed_step"]
+    ep_step = env.episode_length_buf  # (N,) long
+
+    # Build the same per-object placement predicate as object_in_container.
+    def _currently_placed(obj: str, eid: int | None):
+        result = in_opentop_container(world, obj, container, tolerance=tolerance, env_id=eid)
+        if require_contact_with is True:
+            result = _and(result, in_contact(world, obj, container, env_id=eid))
+        elif require_contact_with:
+            result = _and(result, in_contact(world, obj, require_contact_with, env_id=eid))
+        if require_gripper_detached:
+            result = _and(result, _not(in_contact(world, obj, gripper_name, env_id=eid)))
+        return result
+
+    if env_id is None:
+        # Batched path used by IsaacLab TerminationManager.
+        currently = {obj: _currently_placed(obj, None) for obj in objects}
+
+        # Latch first-ever placement per env. torch.where keeps existing latches.
+        for obj in objects:
+            newly = (first_placed[obj] < 0) & currently[obj]
+            if newly.any():
+                first_placed[obj] = torch.where(newly, ep_step.to(first_placed[obj].dtype), first_placed[obj])
+
+        all_in = torch.stack([currently[obj] for obj in objects], dim=0).all(dim=0)
+        ordered = torch.ones(env.num_envs, dtype=torch.bool, device=env.device)
+        for a, b in zip(objects[:-1], objects[1:]):
+            both_latched = (first_placed[a] >= 0) & (first_placed[b] >= 0)
+            if strict:
+                cmp = first_placed[a] < first_placed[b]
+            else:
+                cmp = first_placed[a] <= first_placed[b]
+            ordered &= both_latched & cmp
+
+        result = all_in & ordered
+    else:
+        currently = {obj: _currently_placed(obj, env_id) for obj in objects}
+
+        for obj in objects:
+            if first_placed[obj][env_id].item() < 0 and bool(currently[obj]):
+                first_placed[obj][env_id] = int(ep_step[env_id].item())
+
+        all_in = all(bool(currently[obj]) for obj in objects)
+        ordered = True
+        for a, b in zip(objects[:-1], objects[1:]):
+            fa = int(first_placed[a][env_id].item())
+            fb = int(first_placed[b][env_id].item())
+            if fa < 0 or fb < 0:
+                ordered = False
+                break
+            if strict:
+                if not (fa < fb):
+                    ordered = False
+                    break
+            else:
+                if not (fa <= fb):
+                    ordered = False
+                    break
+        result = bool(all_in and ordered)
+
+    if robolab.constants.DEBUG:
+        print(f"objects_placed_in_container_in_order: {objects} -> '{container}' (strict={strict}) -> {result}")
+    return result

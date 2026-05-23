@@ -16,7 +16,7 @@ All getters support an optional env_id parameter:
 """
 
 import math
-from typing import Any
+from typing import Any, Callable
 
 import isaaclab.sim.utils as sim_utils
 import numpy as np
@@ -75,12 +75,18 @@ class WorldState:
         env: ManagerBasedRLEnv,
     ):
         self._local_geometry_cache: dict[str, dict] = {}
+        # Stateful predicate storage. Outer key identifies the predicate +
+        # its parameterization; inner dict is opaque to WorldState except for
+        # the optional "__reset__" callable, which is invoked per env_ids on
+        # episode reset.
+        self._predicate_state: dict[str, dict] = {}
         self.set_world(env)
 
     def set_world(self, env: ManagerBasedRLEnv):
         if env != self.env:
             self.env = env
             self._local_geometry_cache.clear()
+            self._predicate_state.clear()
             if robolab.constants.DEBUG:
                 caller_info = get_caller_info()
                 print(f"[{caller_info}] setting world for env. Objects: {list(self.entities.keys())}")
@@ -185,6 +191,40 @@ class WorldState:
             'dimensions': dimensions,         # (3,) np
         }
         return self._local_geometry_cache[body_name]
+
+    #########################################################
+    # Stateful predicate storage
+    #########################################################
+    #
+    # Predicates that need to remember per-env state across simulation steps
+    # (e.g., "object X was placed in the container before object Y") store
+    # their state in self._predicate_state, keyed by a string that identifies
+    # the predicate + its parameterization. Each inner dict is opaque to
+    # WorldState, with one optional convention: a "__reset__" callable that
+    # accepts an (env_ids: Tensor) index and clears that env's rows.
+    # RobolabEnv._reset_idx invokes reset_predicate_state(env_ids) at every
+    # path that actually resets envs.
+
+    def get_or_init_predicate_state(self, key: str, factory: Callable[[], dict]) -> dict:
+        """Return the storage bag for a stateful predicate, allocating it on first call."""
+        if key not in self._predicate_state:
+            self._predicate_state[key] = factory()
+        return self._predicate_state[key]
+
+    def reset_predicate_state(self, env_ids) -> None:
+        """Clear stateful-predicate latches for the given envs.
+
+        Called by RobolabEnv._reset_idx at every path that actually resets envs.
+        Frozen envs are not passed in, so their latches survive past termination.
+        """
+        if not self._predicate_state:
+            return
+        if not isinstance(env_ids, torch.Tensor):
+            env_ids = torch.as_tensor(env_ids, dtype=torch.long, device=self.env.device)
+        for state in self._predicate_state.values():
+            reset_fn = state.get("__reset__")
+            if reset_fn is not None:
+                reset_fn(env_ids)
 
     #########################################################
     # Robot
