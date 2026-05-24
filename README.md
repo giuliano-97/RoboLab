@@ -145,11 +145,11 @@ See the full [Benchmark Task Library](robolab/tasks/README.md) for all 120 tasks
 A self-contained web dashboard for browsing the benchmark (scenes and tasks) and analyzing your experiment results.
 
 ```bash
-robolab-dashboard
+uv run robolab-dashboard
 # open http://localhost:8080
 ```
 
-<video src="docs/images/robolab_dashboard.mp4" autoplay controls muted loop playsinline width="800">
+<video src="https://github.com/NVlabs/RoboLab/raw/main/docs/images/robolab_dashboard.mp4" autoplay controls muted loop playsinline width="800">
   Your viewer doesn't render inline video — see <a href="docs/images/robolab_dashboard.mp4">robolab_dashboard.mp4</a>.
 </video>
 

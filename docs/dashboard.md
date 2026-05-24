@@ -2,7 +2,7 @@
 
 A self-contained web dashboard for browsing the RoboLab benchmark and inspecting eval results. Boots in seconds, binds `0.0.0.0` so anyone on your LAN can reach it via your IP.
 
-<video src="images/robolab_dashboard.mp4" autoplay controls muted loop playsinline width="800">
+<video src="https://github.com/NVlabs/RoboLab/raw/main/docs/images/robolab_dashboard.mp4" autoplay controls muted loop playsinline width="800">
   Your viewer doesn't render inline video — see <a href="images/robolab_dashboard.mp4">robolab_dashboard.mp4</a>.
 </video>
 
@@ -11,13 +11,12 @@ A self-contained web dashboard for browsing the RoboLab benchmark and inspecting
 ```bash
 # Already installed if you ran `uv sync` / `uv pip install -e .` — the
 # dashboard ships in the default RoboLab dependency set.
-source .venv/bin/activate
 
 # Bare minimum: starts empty, add output directories from the sidebar.
-robolab-dashboard
+uv run robolab-dashboard
 
 # Or seed it with one up-front (still editable in the UI):
-robolab-dashboard --output-dir /path/to/output
+uv run robolab-dashboard --output-dir /path/to/output
 # → Serving /path/to/output on http://0.0.0.0:8080
 ```
 
