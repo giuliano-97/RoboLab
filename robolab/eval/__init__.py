@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: CC-BY-NC-4.0
+# SPDX-License-Identifier: Apache-2.0
 
 """Evaluation orchestration: episode runner, inference ABC, summarize helpers,
 plus shared argparse / per-task-loop helpers for the per-policy runner scripts

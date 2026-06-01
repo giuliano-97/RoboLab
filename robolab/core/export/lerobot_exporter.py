@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 """LeRobot v3.0 dataset exporter for RoboLab.
 
 This module converts RoboLab's HDF5 output format to LeRobot v3.0 format,
