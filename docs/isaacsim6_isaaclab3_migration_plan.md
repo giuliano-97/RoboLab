@@ -86,6 +86,14 @@ This document captures the agreed multi-session migration plan for upgrading Rob
   ```
 
 - The same command should also be runnable through `srun` with the debug A6000 allocation settings.
+- On the current cluster image, prepend Isaac Sim's bundled GPU-foundation dependency directory to
+  `LD_LIBRARY_PATH` before launching Kit. Without this, `libgpu.foundation.plugin.so` may resolve
+  `libgobject` against the system `libglib` and fail with `undefined symbol: g_string_copy`.
+
+  ```bash
+  export GPU_FOUNDATION_DEPS="$PWD/.venv/lib/python3.12/site-packages/isaacsim/extscache/omni.gpu_foundation-0.0.0+6312fa25.lx64.r.cp312/bin/deps"
+  export LD_LIBRARY_PATH="$GPU_FOUNDATION_DEPS:${LD_LIBRARY_PATH:-}"
+  ```
 - Commit: `fix: restore basic runtime on isaac lab 3`
 - Stop and request user review.
 

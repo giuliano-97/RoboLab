@@ -100,6 +100,8 @@ def get_contact_sensors(scene):
     contact_sensors = {
         name: sensor for name, sensor in scene.sensors.items()
         if isinstance(sensor, ContactSensor)
+        or sensor.__class__.__name__ == "ContactSensor"
+        or (("__" in name or name.endswith("__all_objs")) and hasattr(sensor, "data"))
     }
     return contact_sensors
 
