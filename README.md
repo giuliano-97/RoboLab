@@ -19,7 +19,7 @@
 
 ## Getting Started
 
-Requires [uv](https://docs.astral.sh/uv/getting-started/installation/) and a system `ffmpeg` (used for video recording). Isaac Sim 5.0 and Isaac Lab 2.2.0 are installed automatically via `uv sync`. See [Requirements](#requirements) for hardware.
+Requires [uv](https://docs.astral.sh/uv/getting-started/installation/) and a system `ffmpeg` (used for video recording). Isaac Sim 6.0.0.1 and Isaac Lab 3.0.0 beta 2 are installed automatically via `uv sync`. See [Requirements](#requirements) for hardware.
 
 ### Installation
 
@@ -27,9 +27,9 @@ Requires [uv](https://docs.astral.sh/uv/getting-started/installation/) and a sys
 sudo apt install ffmpeg
 git clone <repo_url>
 cd robolab
-uv venv --python 3.11
+uv venv --python 3.12
 source .venv/bin/activate
-uv sync
+uv sync --index-strategy unsafe-best-match --prerelease=allow
 ```
 
 Verify installation:
@@ -143,13 +143,14 @@ Full documentation is at **[docs/README.md](docs/README.md)**, covering:
 
 | Dependency | Version |
 |---|---|
-| Isaac Sim | 5.0 |
-| Isaac Lab | 2.2.0 |
-| Python | 3.11 |
+| Isaac Sim | 6.0.0.1 |
+| Isaac Lab | 3.0.0 beta 2 |
+| Python | >=3.12,<3.13 |
 | Linux | Ubuntu 22.04+ |
 
 - **Disk space**: ~8 GB (assets account for ~7 GB)
 - **GPU**: NVIDIA RTX GPU required. Recommend 48GB+ VRAM. See [Isaac Lab's hardware requirements](https://isaac-sim.github.io/IsaacLab/main/source/setup/installation/index.html#system-requirements) for recommended GPUs and VRAM.
+- **Cluster runtime checks**: Isaac Sim runtime commands require a Slurm GPU allocation on the target cluster. Dependency resolution and import-only checks can run outside Slurm, but Kit launch failures from a non-GPU login shell are not meaningful migration failures.
 - **Speed**: 30 GPU hours / 100 tasks, 1.4 it/s (assuming ~200ms inference step)
 
 ## License
